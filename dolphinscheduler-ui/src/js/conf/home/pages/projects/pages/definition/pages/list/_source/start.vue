@@ -183,12 +183,6 @@
         </div>
       </div>
     </div>
-    <div class="clearfix list">
-      <span class="text">{{$t('Whether dry-run')}}</span>
-      <span class="cont" style="padding-top: 5px;">
-          <el-switch v-model="dryRun" size="small" active-value="1" inactive-value="0"></el-switch>
-      </span>
-    </div>
     <div class="submit">
       <el-button type="text" size="small" @click="close()"> {{$t('Cancel')}} </el-button>
       <el-button type="primary" size="small" round :loading="spinnerLoading" @click="ok()">{{spinnerLoading ? $t('Loading...') : $t('Start')}} </el-button>
@@ -232,8 +226,7 @@
         environmentCode: '',
         // Global custom parameters
         definitionGlobalParams: [],
-        udpList: [],
-        dryRun: 0
+        udpList: []
       }
     },
     mixins: [disabledState],
@@ -298,8 +291,7 @@
           workerGroup: this.workerGroup,
           environmentCode: this.environmentCode,
           startParams: !_.isEmpty(startParams) ? JSON.stringify(startParams) : '',
-          expectedParallelismNumber: this.parallismNumber,
-          dryRun: this.dryRun
+          expectedParallelismNumber: this.parallismNumber
         }
         // Executed from the specified node
         if (this.sourceType === 'contextmenu') {
@@ -403,12 +395,14 @@
         display: block;
       }
     }
+
     .ans {
       color: #0097e0;
       font-size: 14px;
       vertical-align: middle;
       cursor: pointer;
     }
+
     .list {
       margin-bottom: 14px;
       .text {

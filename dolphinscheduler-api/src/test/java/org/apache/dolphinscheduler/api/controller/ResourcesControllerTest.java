@@ -19,7 +19,6 @@ package org.apache.dolphinscheduler.api.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -153,7 +152,7 @@ public class ResourcesControllerTest extends AbstractControllerTest {
         paramsMap.add("id", "1");
         paramsMap.add("content","echo test_1111");
 
-        MvcResult mvcResult = mockMvc.perform(put("/resources/1/update-content")
+        MvcResult mvcResult = mockMvc.perform(post("/resources/update-content")
                 .header(SESSION_ID, sessionId)
                 .params(paramsMap))
                 .andExpect(status().isOk())
@@ -172,7 +171,7 @@ public class ResourcesControllerTest extends AbstractControllerTest {
         MultiValueMap<String, String> paramsMap = new LinkedMultiValueMap<>();
         paramsMap.add("id", "5");
 
-        MvcResult mvcResult = mockMvc.perform(get("/resources/{id}/download",5)
+        MvcResult mvcResult = mockMvc.perform(get("/resources/download")
                 .header(SESSION_ID, sessionId)
                 .params(paramsMap))
                 .andExpect(status().isOk())

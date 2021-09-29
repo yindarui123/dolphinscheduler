@@ -109,7 +109,9 @@
     methods: {
       ...mapActions('resource', ['deleteResource']),
       _downloadFile (item) {
-        downloadFile(`resources/${item.id}/download`)
+        downloadFile('resources/download', {
+          id: item.id
+        })
       },
       _go (item) {
         localStore.setItem('file', `${item.alias}|${item.size}`)

@@ -77,6 +77,7 @@ export default {
       })
     })
   },
+
   /**
    * Verify that the username exists
    * @param userName
@@ -398,7 +399,7 @@ export default {
    */
   queryAllAlertPluginInstance ({ state }, payload) {
     return new Promise((resolve, reject) => {
-      io.get('alert-plugin-instances/list', payload, res => {
+      io.get('alert-plugin-instance/list', payload, res => {
         resolve(res.data)
       }).catch(e => {
         reject(e)
@@ -482,7 +483,7 @@ export default {
    */
   deletAelertPluginInstance ({ state }, payload) {
     return new Promise((resolve, reject) => {
-      io.delete(`alert-plugin-instances/${payload.id}`, payload, res => {
+      io.delete(`alert-plugin-instance/${payload.id}`, payload, res => {
         resolve(res)
       }).catch(e => {
         reject(e)
@@ -710,5 +711,94 @@ export default {
         reject(e)
       })
     })
-  }
+  },
+  /**
+   * close task group
+   */
+  closeTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post('task-group/close-task-group', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * create task group
+   */
+  createTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post('task-group/create', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * list-all task groups
+   */
+  listAllTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get('task-group/query-list-all', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * list-all task groups by status
+   */
+  listAllTaskGroupByStatus ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get('task-group/query-list-by-status', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * start task group
+   */
+  startTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post('task-group/start-task-group', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * wake task group
+   */
+  wakeTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post('task-group/wake-task-compulsively', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * update task group
+   */
+  updateTaskGroup ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post('task-group/update', payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
 }
+
+
+
+
+

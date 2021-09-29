@@ -272,7 +272,7 @@
 
         this.store.dispatch(`security/${this.item ? 'updateUser' : 'createUser'}`, param).then(res => {
           this.$refs.popover.spinnerLoading = false
-          this.$emit('onUpdate')
+          this.$emit('onUpdate', param)
           this.$message.success(res.msg)
         }).catch(e => {
           this.$message.error(e.msg || '')

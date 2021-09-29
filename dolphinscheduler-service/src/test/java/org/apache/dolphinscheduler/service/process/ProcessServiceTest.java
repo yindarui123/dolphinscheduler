@@ -20,55 +20,28 @@ package org.apache.dolphinscheduler.service.process;
 import static org.apache.dolphinscheduler.common.Constants.CMD_PARAM_RECOVER_PROCESS_ID_STRING;
 import static org.apache.dolphinscheduler.common.Constants.CMD_PARAM_START_PARAMS;
 import static org.apache.dolphinscheduler.common.Constants.CMD_PARAM_SUB_PROCESS_DEFINE_ID;
+
 import static org.mockito.ArgumentMatchers.any;
 
 import org.apache.dolphinscheduler.common.Constants;
 import org.apache.dolphinscheduler.common.enums.CommandType;
 import org.apache.dolphinscheduler.common.enums.Flag;
 import org.apache.dolphinscheduler.common.enums.TaskType;
-import org.apache.dolphinscheduler.common.enums.UserType;
 import org.apache.dolphinscheduler.common.enums.WarningType;
 import org.apache.dolphinscheduler.common.graph.DAG;
 import org.apache.dolphinscheduler.common.model.TaskNode;
 import org.apache.dolphinscheduler.common.model.TaskNodeRelation;
-import org.apache.dolphinscheduler.common.process.ResourceInfo;
-import org.apache.dolphinscheduler.common.task.spark.SparkParameters;
 import org.apache.dolphinscheduler.common.utils.DateUtils;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
-import org.apache.dolphinscheduler.dao.entity.Command;
-import org.apache.dolphinscheduler.dao.entity.ProcessDefinition;
-import org.apache.dolphinscheduler.dao.entity.ProcessDefinitionLog;
-import org.apache.dolphinscheduler.dao.entity.ProcessInstance;
-import org.apache.dolphinscheduler.dao.entity.ProcessInstanceMap;
-import org.apache.dolphinscheduler.dao.entity.ProcessTaskRelation;
-import org.apache.dolphinscheduler.dao.entity.ProcessTaskRelationLog;
-import org.apache.dolphinscheduler.dao.entity.Resource;
-import org.apache.dolphinscheduler.dao.entity.TaskDefinition;
-import org.apache.dolphinscheduler.dao.entity.TaskDefinitionLog;
-import org.apache.dolphinscheduler.dao.entity.TaskInstance;
-import org.apache.dolphinscheduler.dao.entity.User;
-import org.apache.dolphinscheduler.dao.mapper.CommandMapper;
-import org.apache.dolphinscheduler.dao.mapper.ErrorCommandMapper;
-import org.apache.dolphinscheduler.dao.mapper.ProcessDefinitionLogMapper;
-import org.apache.dolphinscheduler.dao.mapper.ProcessDefinitionMapper;
-import org.apache.dolphinscheduler.dao.mapper.ProcessInstanceMapper;
-import org.apache.dolphinscheduler.dao.mapper.ProcessTaskRelationLogMapper;
-import org.apache.dolphinscheduler.dao.mapper.ProcessTaskRelationMapper;
-import org.apache.dolphinscheduler.dao.mapper.ResourceMapper;
-import org.apache.dolphinscheduler.dao.mapper.TaskDefinitionLogMapper;
-import org.apache.dolphinscheduler.dao.mapper.TaskDefinitionMapper;
-import org.apache.dolphinscheduler.dao.mapper.TaskInstanceMapper;
-import org.apache.dolphinscheduler.dao.mapper.UserMapper;
+import org.apache.dolphinscheduler.dao.entity.*;
+import org.apache.dolphinscheduler.dao.mapper.*;
 import org.apache.dolphinscheduler.service.quartz.cron.CronUtilsTest;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -77,12 +50,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 
 /**
  * process service test
@@ -111,14 +82,14 @@ public class ProcessServiceTest {
     @Mock
     private TaskDefinitionLogMapper taskDefinitionLogMapper;
     @Mock
-    private TaskDefinitionMapper taskDefinitionMapper;
-    @Mock
     private ProcessTaskRelationMapper processTaskRelationMapper;
     @Mock
     private ProcessDefinitionLogMapper processDefineLogMapper;
     @Mock
-    private ResourceMapper resourceMapper;
+    private TaskGroupMapper taskGroupMapper;
 
+    @Mock
+    private TaskGroupQueueMapper taskGroupQueueMapper;
     @Test
     public void testCreateSubCommand() {
         ProcessInstance parentInstance = new ProcessInstance();
@@ -376,38 +347,6 @@ public class ProcessServiceTest {
     }
 
     @Test
-    public void testSaveTaskDefine() {
-        User operator = new User();
-        operator.setId(-1);
-        operator.setUserType(UserType.GENERAL_USER);
-        long projectCode = 751485690568704L;
-        String taskJson = "[{\"code\":751500437479424,\"name\":\"aa\",\"version\":1,\"description\":\"\",\"delayTime\":0,"
-            + "\"taskType\":\"SHELL\",\"taskParams\":{\"resourceList\":[],\"localParams\":[],\"rawScript\":\"sleep 1s\\necho 11\","
-            + "\"dependence\":{},\"conditionResult\":{\"successNode\":[\"\"],\"failedNode\":[\"\"]},\"waitStartTimeout\":{}},"
-            + "\"flag\":\"YES\",\"taskPriority\":\"MEDIUM\",\"workerGroup\":\"yarn\",\"failRetryTimes\":0,\"failRetryInterval\":1,"
-            + "\"timeoutFlag\":\"OPEN\",\"timeoutNotifyStrategy\":\"FAILED\",\"timeout\":1,\"environmentCode\":751496815697920},"
-            + "{\"code\":751516889636864,\"name\":\"bb\",\"description\":\"\",\"taskType\":\"SHELL\",\"taskParams\":{\"resourceList\":[],"
-            + "\"localParams\":[],\"rawScript\":\"echo 22\",\"dependence\":{},\"conditionResult\":{\"successNode\":[\"\"],\"failedNode\":[\"\"]},"
-            + "\"waitStartTimeout\":{}},\"flag\":\"YES\",\"taskPriority\":\"MEDIUM\",\"workerGroup\":\"default\",\"failRetryTimes\":\"0\","
-            + "\"failRetryInterval\":\"1\",\"timeoutFlag\":\"CLOSE\",\"timeoutNotifyStrategy\":\"\",\"timeout\":0,\"delayTime\":\"0\",\"environmentCode\":-1}]";
-        List<TaskDefinitionLog> taskDefinitionLogs = JSONUtils.toList(taskJson, TaskDefinitionLog.class);
-        TaskDefinitionLog taskDefinition = new TaskDefinitionLog();
-        taskDefinition.setCode(751500437479424L);
-        taskDefinition.setName("aa");
-        taskDefinition.setProjectCode(751485690568704L);
-        taskDefinition.setTaskType(TaskType.SHELL.getDesc());
-        taskDefinition.setUserId(-1);
-        taskDefinition.setVersion(1);
-        taskDefinition.setCreateTime(new Date());
-        taskDefinition.setUpdateTime(new Date());
-        Mockito.when(taskDefinitionLogMapper.queryByDefinitionCodeAndVersion(taskDefinition.getCode(), taskDefinition.getVersion())).thenReturn(taskDefinition);
-        Mockito.when(taskDefinitionLogMapper.queryMaxVersionForDefinition(taskDefinition.getCode())).thenReturn(1);
-        Mockito.when(taskDefinitionMapper.queryByCode(taskDefinition.getCode())).thenReturn(taskDefinition);
-        int result = processService.saveTaskDefine(operator, projectCode, taskDefinitionLogs);
-        Assert.assertEquals(0, result);
-    }
-
-    @Test
     public void testGenDagGraph() {
         ProcessDefinition processDefinition = new ProcessDefinition();
         processDefinition.setCode(1L);
@@ -488,120 +427,42 @@ public class ProcessServiceTest {
     }
 
     @Test
-    public void testUpdateTaskDefinitionResources() throws Exception {
-        TaskDefinition taskDefinition = new TaskDefinition();
-        String taskParameters = "{\n"
-            + "    \"mainClass\": \"org.apache.dolphinscheduler.SparkTest\",\n"
-            + "    \"mainJar\": {\n"
-            + "        \"id\": 1\n"
-            + "    },\n"
-            + "    \"deployMode\": \"cluster\",\n"
-            + "    \"resourceList\": [\n"
-            + "        {\n"
-            + "            \"id\": 3\n"
-            + "        },\n"
-            + "        {\n"
-            + "            \"id\": 4\n"
-            + "        }\n"
-            + "    ],\n"
-            + "    \"localParams\": [],\n"
-            + "    \"driverCores\": 1,\n"
-            + "    \"driverMemory\": \"512M\",\n"
-            + "    \"numExecutors\": 2,\n"
-            + "    \"executorMemory\": \"2G\",\n"
-            + "    \"executorCores\": 2,\n"
-            + "    \"appName\": \"\",\n"
-            + "    \"mainArgs\": \"\",\n"
-            + "    \"others\": \"\",\n"
-            + "    \"programType\": \"JAVA\",\n"
-            + "    \"sparkVersion\": \"SPARK2\",\n"
-            + "    \"dependence\": {},\n"
-            + "    \"conditionResult\": {\n"
-            + "        \"successNode\": [\n"
-            + "            \"\"\n"
-            + "        ],\n"
-            + "        \"failedNode\": [\n"
-            + "            \"\"\n"
-            + "        ]\n"
-            + "    },\n"
-            + "    \"waitStartTimeout\": {}\n"
-            + "}";
-        taskDefinition.setTaskParams(taskParameters);
-
-        Map<Integer, Resource> resourceMap =
-            Stream.of(1, 3, 4)
-                .map(i -> {
-                    Resource resource = new Resource();
-                    resource.setId(i);
-                    resource.setFileName("file" + i);
-                    resource.setFullName("/file" + i);
-                    return resource;
-                })
-                .collect(
-                    Collectors.toMap(
-                        Resource::getId,
-                        resource -> resource)
-                );
-        for (Integer integer : Arrays.asList(1, 3, 4)) {
-            Mockito.when(resourceMapper.selectById(integer))
-                .thenReturn(resourceMap.get(integer));
-        }
-
-        Whitebox.invokeMethod(processService,
-            "updateTaskDefinitionResources",
-            taskDefinition);
-
-        String taskParams = taskDefinition.getTaskParams();
-        SparkParameters sparkParameters = JSONUtils.parseObject(taskParams, SparkParameters.class);
-        ResourceInfo mainJar = sparkParameters.getMainJar();
-        Assert.assertEquals(1, mainJar.getId());
-        Assert.assertEquals("file1", mainJar.getRes());
-        Assert.assertEquals("/file1", mainJar.getResourceName());
-
-        Assert.assertEquals(2, sparkParameters.getResourceList().size());
-        ResourceInfo res1 = sparkParameters.getResourceList().get(0);
-        ResourceInfo res2 = sparkParameters.getResourceList().get(1);
-        Assert.assertEquals(3, res1.getId());
-        Assert.assertEquals("file3", res1.getRes());
-        Assert.assertEquals("/file3", res1.getResourceName());
-        Assert.assertEquals(4, res2.getId());
-        Assert.assertEquals("file4", res2.getRes());
-        Assert.assertEquals("/file4", res2.getResourceName());
-
+    public void testCreateTaskGroupQueue() {
+        Mockito.when(taskGroupQueueMapper.insert(Mockito.any(TaskGroupQueue.class))).thenReturn(1);
+        boolean b = processService.insertIntoTaskGroupQueue(1, "task name", 1, 1, 1, 1);
+        Assert.assertEquals(true, b);
     }
 
     @Test
-    public void testUpdateResourceInfo() throws Exception {
-        // test if input is null
-        ResourceInfo resourceInfoNull = null;
-        ResourceInfo updatedResourceInfo1 = Whitebox.invokeMethod(processService,
-            "updateResourceInfo",
-            resourceInfoNull);
-        Assert.assertNull(updatedResourceInfo1);
+    public void testDoRelease() {
 
-        // test if resource id less than 1
-        ResourceInfo resourceInfoVoid = new ResourceInfo();
-        ResourceInfo updatedResourceInfo2 = Whitebox.invokeMethod(processService,
-            "updateResourceInfo",
-            resourceInfoVoid);
-        Assert.assertNull(updatedResourceInfo2);
+        TaskGroupQueue taskGroupQueue = getTaskGroupQueue();
 
-        // test normal situation
-        ResourceInfo resourceInfoNormal = new ResourceInfo();
-        resourceInfoNormal.setId(1);
-        Resource resource = new Resource();
-        resource.setId(1);
-        resource.setFileName("test.txt");
-        resource.setFullName("/test.txt");
-        Mockito.when(resourceMapper.selectById(1)).thenReturn(resource);
-        ResourceInfo updatedResourceInfo3 = Whitebox.invokeMethod(processService,
-            "updateResourceInfo",
-            resourceInfoNormal);
+        Mockito.when(taskGroupQueueMapper.queryByTaskId(1)).thenReturn(taskGroupQueue);
+        Mockito.when(taskGroupQueueMapper.updateById(taskGroupQueue)).thenReturn(1);
 
-        Assert.assertEquals(1, updatedResourceInfo3.getId());
-        Assert.assertEquals("test.txt", updatedResourceInfo3.getRes());
-        Assert.assertEquals("/test.txt", updatedResourceInfo3.getResourceName());
+        Assert.assertNull(processService.doRelease(1,7));
+
+    }
+    @Test
+    public void testDoAwake() {
+        boolean b = processService.doWakeTask();
+        Assert.assertTrue(b);
 
     }
 
+
+    private TaskGroupQueue getTaskGroupQueue() {
+        TaskGroupQueue taskGroupQueue = new TaskGroupQueue();
+        taskGroupQueue.setTaskName("task name");
+        taskGroupQueue.setId(1);
+        taskGroupQueue.setGroupId(1);
+        taskGroupQueue.setTaskId(1);
+        taskGroupQueue.setPriority(1);
+        taskGroupQueue.setStatus(1);
+        Date date = new Date(System.currentTimeMillis());
+        taskGroupQueue.setUpdateTime(date);
+        taskGroupQueue.setCreateTime(date);
+        return taskGroupQueue;
+    }
 }

@@ -20,43 +20,26 @@ package org.apache.dolphinscheduler.common.process;
  * resource info
  */
 public class ResourceInfo {
-    /**
-     * res id of the resource that was uploaded
-     */
-    private int id;
+  /**
+   * res the name of the resource that was uploaded
+   */
+  private int id;
 
-    private String res;
+  public int getId() {
+    return id;
+  }
 
-    /**
-     * full name of the resource that was uploaded
-     */
-    private String resourceName;
+  public void setId(int id) {
+    this.id = id;
+  }
 
-    public ResourceInfo() {
-        // do nothing, void constructor
-    }
+  private String res;
 
-    public int getId() {
-        return id;
-    }
+  public String getRes() {
+    return res;
+  }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getRes() {
-        return res;
-    }
-
-    public void setRes(String res) {
-        this.res = res;
-    }
-
-    public String getResourceName() {
-        return resourceName;
-    }
-
-    public void setResourceName(String resourceName) {
-        this.resourceName = resourceName;
-    }
+  public void setRes(String res) {
+    this.res = res;
+  }
 }

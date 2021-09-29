@@ -53,7 +53,6 @@ public enum TaskType {
     SQOOP(12, "SQOOP"),
     WATERDROP(13, "WATERDROP"),
     SWITCH(14, "SWITCH"),
-    TIS(15, "TIS"),
     ;
 
     TaskType(int code, String desc) {

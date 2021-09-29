@@ -270,7 +270,10 @@ public class TaskDefinitionServiceImplTest {
 
     @Test
     public void genTaskCodeList() {
-        Map<String, Object> genTaskCodeList = taskDefinitionService.genTaskCodeList(10);
+        User loginUser = new User();
+        loginUser.setId(-1);
+        loginUser.setUserType(UserType.GENERAL_USER);
+        Map<String, Object> genTaskCodeList = taskDefinitionService.genTaskCodeList(loginUser, 10);
         Assert.assertEquals(Status.SUCCESS, genTaskCodeList.get(Constants.STATUS));
     }
 }
