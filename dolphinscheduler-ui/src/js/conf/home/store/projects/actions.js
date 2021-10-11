@@ -59,7 +59,7 @@ export default {
    */
   deleteProjects ({ state }, payload) {
     return new Promise((resolve, reject) => {
-      io.delete(`projects/${payload.projectCode}`, {}, res => {
+      io.delete(`projects/${payload}`, {}, res => {
         resolve(res)
       }).catch(e => {
         reject(e)

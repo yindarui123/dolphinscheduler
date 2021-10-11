@@ -119,7 +119,7 @@
         formData.append('description', this.udfDesc)
         this.spinnerLoading = true
         this.$emit('on-update-present', false)
-        io.post('resources', res => {
+        io.post('resources/create', res => {
           this.$message.success(res.msg)
           this.spinnerLoading = false
           this.progress = 0

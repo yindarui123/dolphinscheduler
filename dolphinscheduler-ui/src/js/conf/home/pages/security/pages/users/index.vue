@@ -114,8 +114,9 @@
         this.item = item
         this.createUserDialog = true
       },
-      onUpdate () {
+      onUpdate (param) {
         this._debounceGET('false')
+        this.setUserInfo(param)
         this.createUserDialog = false
       },
       close () {
@@ -129,6 +130,7 @@
         }
         this.isLoading = !flag
         this.getUsersListP(this.searchParams).then(res => {
+         console.log("22222",this)
           if (this.searchParams.pageNo > 1 && res.totalList.length === 0) {
             this.searchParams.pageNo = this.searchParams.pageNo - 1
           } else {

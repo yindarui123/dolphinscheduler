@@ -30,14 +30,15 @@ import org.apache.dolphinscheduler.server.master.dispatch.enums.ExecutorType;
 import org.apache.dolphinscheduler.server.master.dispatch.exceptions.ExecuteException;
 import org.apache.dolphinscheduler.server.master.dispatch.executor.NettyExecutorManager;
 import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
+import org.apache.dolphinscheduler.service.process.ProcessService;
 import org.apache.dolphinscheduler.service.queue.TaskPriority;
 import org.apache.dolphinscheduler.service.queue.TaskPriorityQueue;
 import org.apache.dolphinscheduler.service.queue.TaskPriorityQueueImpl;
-import org.apache.dolphinscheduler.service.queue.entity.TaskExecutionContext;
 
 import org.apache.commons.lang.StringUtils;
 
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,15 +63,39 @@ public class CommonTaskProcessor extends BaseTaskProcessor {
      */
     protected Logger logger = LoggerFactory.getLogger(getClass());
 
+    protected ProcessService processService = SpringApplicationContext.getBean(ProcessService.class);
+
+
     @Override
     public boolean submit(TaskInstance task, ProcessInstance processInstance, int maxRetryTimes, int commitInterval) {
         this.processInstance = processInstance;
-        this.taskInstance = processService.submitTask(task, maxRetryTimes, commitInterval);
-
-        if (this.taskInstance == null) {
+        // task group queue
+        int taskGroupId = task.getTaskGroupId();
+        boolean acquireTaskGroup = false;
+        // a task instance that has never applied for a tgq or configuring a tgq should be submitted to DB
+        if (taskGroupId == 0 || !processService.checkTaskIsExsited(task.getId())) {
+            this.taskInstance = processService.submitTask(task, maxRetryTimes, commitInterval);
+            logger.info("task id " + task.getId());
+            acquireTaskGroup = processService.acquireTaskGroup(task.getId(),
+                    task.getName(),
+                    taskGroupId,
+                    task.getProcessInstanceId(),
+                    task.getTaskInstancePriority().getCode());
+            if (!acquireTaskGroup) {
+                logger.info("submit task, but try to acquire task group failed", taskInstance.getName());
+                return false;
+            }
+        }
+        // if the task is running, it should not be dispatched again
+        ConcurrentHashMap<Integer, Integer> runningTaskCache = processService.getRunningTaskCache();
+        // if the task is not running and has acquired a tgq successfully, it should be dispatched again
+        if (!runningTaskCache.contains(task.getId()) && acquireTaskGroup) {
+            logger.info("submit task, dispatch the task instance successfully", taskInstance.getName());
+            dispatchTask(taskInstance, processInstance);
+        } else {
+            logger.info("submit task, but try to dispatchTask task instance failed", taskInstance.getName());
             return false;
         }
-        dispatchTask(taskInstance, processInstance);
         return true;
     }
 
@@ -85,6 +110,7 @@ public class CommonTaskProcessor extends BaseTaskProcessor {
 
     @Override
     protected boolean taskTimeout() {
+        processService.release(taskInstance.getTaskGroupId(), taskInstance.getId(), ExecutionStatus.PAUSE.getCode());
         return true;
     }
 
@@ -93,6 +119,7 @@ public class CommonTaskProcessor extends BaseTaskProcessor {
      */
     @Override
     protected boolean pauseTask() {
+        processService.release(taskInstance.getTaskGroupId(), taskInstance.getId(), ExecutionStatus.PAUSE.getCode());
         return true;
     }
 
@@ -122,16 +149,12 @@ public class CommonTaskProcessor extends BaseTaskProcessor {
             TaskPriority taskPriority = new TaskPriority(processInstance.getProcessInstancePriority().getCode(),
                     processInstance.getId(), taskInstance.getProcessInstancePriority().getCode(),
                     taskInstance.getId(), org.apache.dolphinscheduler.common.Constants.DEFAULT_WORKER_GROUP);
-
-            TaskExecutionContext taskExecutionContext = getTaskExecutionContext(taskInstance);
-            taskPriority.setTaskExecutionContext(taskExecutionContext);
-
             taskUpdateQueue.put(taskPriority);
             logger.info(String.format("master submit success, task : %s", taskInstance.getName()));
             return true;
         } catch (Exception e) {
             logger.error("submit task  Exception: ", e);
-            logger.error("task error : {}", JSONUtils.toJsonString(taskInstance));
+            logger.error("task error : %s", JSONUtils.toJsonString(taskInstance));
             return false;
         }
     }
@@ -157,7 +180,8 @@ public class CommonTaskProcessor extends BaseTaskProcessor {
                 processService.updateTaskInstance(taskInstance);
                 return true;
             }
-
+            // task group release
+            processService.release(taskInstance.getTaskGroupId(), taskInstance.getId(), ExecutionStatus.PAUSE.getCode());
             TaskKillRequestCommand killCommand = new TaskKillRequestCommand();
             killCommand.setTaskInstanceId(taskInstance.getId());
 

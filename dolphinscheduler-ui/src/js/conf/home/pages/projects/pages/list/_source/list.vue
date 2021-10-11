@@ -106,7 +106,7 @@
        */
       _delete (item, i) {
         this.deleteProjects({
-          projectCode: item.code
+          projectId: item.id
         }).then(res => {
           this.$emit('on-update')
           this.$message.success(res.msg)

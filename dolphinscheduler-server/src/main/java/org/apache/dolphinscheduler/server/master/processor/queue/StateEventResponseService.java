@@ -114,7 +114,6 @@ public class StateEventResponseService {
                 } catch (InterruptedException e) {
                     logger.warn("persist task error", e);
                     Thread.currentThread().interrupt();
-                    break;
                 }
             }
             logger.info("StateEventResponseWorker stopped");
@@ -140,7 +139,7 @@ public class StateEventResponseService {
             workflowExecuteThread.addStateEvent(stateEvent);
             writeResponse(stateEvent, ExecutionStatus.SUCCESS);
         } catch (Exception e) {
-            logger.error("persist event queue error, event: {}", stateEvent, e);
+            logger.error("persist event queue error:", stateEvent.toString(), e);
         }
     }
 

@@ -266,6 +266,19 @@ public class TaskInstance implements Serializable {
      */
     private int dryRun;
 
+    /**
+     * task group id
+     */
+    private int taskGroupId;
+
+    public int getTaskGroupId() {
+        return taskGroupId;
+    }
+
+    public void setTaskGroupId(int taskGroupId) {
+        this.taskGroupId = taskGroupId;
+    }
+
     public void init(String host, Date startTime, String executePath) {
         this.host = host;
         this.startTime = startTime;
